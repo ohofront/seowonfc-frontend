@@ -1,0 +1,2 @@
+import {useCallback,useEffect,useState} from 'react';
+export function useAsync<T>(load:()=>Promise<T>,deps:unknown[]){const [data,setData]=useState<T>();const [loading,setLoading]=useState(true);const [error,setError]=useState('');const run=useCallback(async()=>{setLoading(true);setError('');try{setData(await load())}catch(e){setError(e instanceof Error?e.message:'정보를 불러오지 못했습니다.')}finally{setLoading(false)}},deps);useEffect(()=>{void run()},[run]);return{data,loading,error,reload:run}}
