@@ -1,0 +1,1 @@
+import {detail,list} from './resource'; import type {News} from '../types'; export const getNews=(page=0,size=9)=>list<News>('/news',{page,size}); export const getNewsDetail=(id:string)=>detail<News>('/news',id);

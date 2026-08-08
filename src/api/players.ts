@@ -1,0 +1,1 @@
+import {detail,list} from './resource'; import type {Player,Position} from '../types'; export const getPlayers=(position?:Position)=>list<Player>('/players',position?{position}:{}); export const getPlayer=(id:string)=>detail<Player>('/players',id);
