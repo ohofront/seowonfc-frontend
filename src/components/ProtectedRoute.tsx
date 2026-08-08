@@ -1,0 +1,2 @@
+import {Navigate,Outlet,useLocation} from 'react-router-dom';import {useAuth} from '../hooks/useAuth';
+export function ProtectedRoute({admin=false}:{admin?:boolean}){const {isAuthenticated,isAdmin,loading}=useAuth();const location=useLocation();if(loading)return <div className="py-20 text-center">확인 중...</div>;if(!isAuthenticated)return <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname)}`} replace/>;if(admin&&!isAdmin)return <Navigate to="/" replace/>;return <Outlet/>}
