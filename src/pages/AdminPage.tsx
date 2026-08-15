@@ -5,6 +5,7 @@ import {PageHeader,State} from '../components/UI';
 import {useAsync} from '../hooks/useAsync';
 import type {Page} from '../types';
 import {Link} from 'react-router-dom';
+import {formatKoreanDateTime,toKoreanDateTimeInput,toKoreanOffsetDateTime} from '../utils/dateTime';
 
 type ResourceKey='news'|'players'|'matches'|'sponsors'|'events';
 type FieldType='text'|'number'|'url'|'select'|'textarea'|'datetime-local';
@@ -44,7 +45,7 @@ const matchCreateFields:Field[]=[
   {name:'competition',label:'대회명',type:'text',placeholder:'정규 리그'},
   {name:'homeTeam',label:'홈팀',type:'text',required:true},
   {name:'awayTeam',label:'원정팀',type:'text',required:true},
-  {name:'matchDate',label:'경기 일시',type:'datetime-local',required:true},
+  {name:'matchDate',label:'경기 일시 (한국 시간)',type:'datetime-local',required:true},
   {name:'stadium',label:'경기장',type:'text'},
 ];
 const matchUpdateFields:Field[]=[
@@ -86,7 +87,7 @@ export default function AdminPage(){
       const value=form[field.name];
       if(value===undefined||value==='')return;
       if(field.type==='number')payload[field.name]=Number(value);
-      else if(field.type==='datetime-local')payload[field.name]=new Date(value).toISOString();
+      else if(field.type==='datetime-local')payload[field.name]=toKoreanOffsetDateTime(value);
       else payload[field.name]=value.trim();
     });
     try{
@@ -126,9 +127,9 @@ function FormControl({field,value,onChange}:{field:Field;value:string;onChange:(
   return <input className="field" type={field.type} min={field.type==='number'?0:undefined} value={value} placeholder={field.placeholder} onChange={event=>onChange(event.target.value)}/>;
 }
 
-const toInputValue=(key:string,value:unknown)=>{if(value===null||value===undefined)return '';if(['startDate','endDate','matchDate'].includes(key)){const date=new Date(String(value));if(!Number.isNaN(date.getTime()))return new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16)}return String(value)};
+const toInputValue=(key:string,value:unknown)=>{if(value===null||value===undefined)return '';if(['startDate','endDate','matchDate'].includes(key))return toKoreanDateTimeInput(value);return String(value)};
 const resourceLabel=(resource:ResourceKey)=>({news:'뉴스',players:'선수',matches:'경기',sponsors:'스폰서',events:'이벤트'}[resource]);
 const recordTitle=(resource:ResourceKey,item:Record<string,unknown>)=>String(item.title??item.name??(resource==='matches'?`${item.homeTeam??'홈팀'} vs ${item.awayTeam??'원정팀'}`:'제목 없음'));
 const recordSummary=(resource:ResourceKey,item:Record<string,unknown>)=>{if(resource==='news'||resource==='events')return String(item.content??'내용 없음');if(resource==='players')return `${displayValue(String(item.position??''))} · 등번호 ${item.backNumber??'-'} · ${item.nationality??'국적 미등록'}`;if(resource==='matches')return `${item.competition??'대회 미등록'} · ${formatDate(item.matchDate)} · ${item.stadium??'경기장 미정'}`;return `${displayValue(String(item.tier??''))} · ${item.linkUrl??'웹사이트 미등록'}`};
 const displayValue=(value:string)=>({CLUB:'구단 소식',MATCH:'경기 소식',MEDIA:'미디어',NOTICE:'공지사항',OFFICIAL:'공식 스폰서',PARTNER:'파트너',GK:'골키퍼',DF:'수비수',MF:'미드필더',FW:'공격수',SCHEDULED:'경기 예정',LIVE:'진행 중',FINISHED:'경기 종료'}[value]??value);
-const formatDate=(value:unknown)=>value?new Date(String(value)).toLocaleString('ko-KR'):'일시 미등록';
+const formatDate=(value:unknown)=>formatKoreanDateTime(value);
