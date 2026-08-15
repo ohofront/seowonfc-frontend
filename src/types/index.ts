@@ -10,6 +10,8 @@ export interface SpringPage<T> { content:T[]; number:number; size:number; totalE
 export interface News { id:number; title:string; content:string; thumbnailUrl?:string; imageUrl?:string; createdAt:string; viewCount?:number }
 export type Position = 'GK'|'DF'|'MF'|'FW';
 export interface Player { id:number; name:string; number?:number; position:Position; profileImageUrl?:string; imageUrl?:string; introduction?:string; birthDate?:string; height?:number; weight?:number }
+export type PlayerApplicationStatus = 'PENDING'|'APPROVED'|'REJECTED';
+export interface PlayerApplication { id:number; applicantName?:string; name:string; backNumber:number; position:Position; nationality:string; profileImageUrl?:string; status:PlayerApplicationStatus; rejectReason?:string; createdAt?:string }
 export interface Match { id:number; season:string; status:'SCHEDULED'|'FINISHED'|'CANCELED'; matchDate:string; opponent:string; venue?:string; homeScore?:number; awayScore?:number; isHome?:boolean }
 export interface Standing { rank:number; teamName:string; played:number; won:number; drawn:number; lost:number; goalsFor?:number; goalsAgainst?:number; goalDifference:number; points:number }
 export type BoardType = 'free'|'cheering';
