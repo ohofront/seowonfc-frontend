@@ -1,4 +1,5 @@
 import { Bell, ShieldCheck, UserRound } from 'lucide-react';
+import { me } from '../api/auth';
 import { getNotifications, readNotification } from '../api/notifications';
 import { PageHeader, State } from '../components/UI';
 import { useAsync } from '../hooks/useAsync';
@@ -6,7 +7,9 @@ import { useAuth } from '../hooks/useAuth';
 
 export default function MyPage(){
   const {user}=useAuth();
+  const profile=useAsync(me,[]);
   const notes=useAsync(getNotifications,[]);
+  const member=profile.data??user;
   const markRead=async(id:number)=>{await readNotification(id);await notes.reload()};
 
   return <div className="container-page page-space">
@@ -14,12 +17,12 @@ export default function MyPage(){
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
       <section>
         <div className="mb-5 flex items-center gap-3"><UserRound className="size-5"/><h2 className="text-xl font-semibold">내 정보</h2></div>
-        <dl className="divide-y divide-line rounded-lg border border-line bg-white px-5">
-          <div className="py-5"><dt className="text-xs text-muted">이름</dt><dd className="mt-2 font-medium">{user?.name||'-'}</dd></div>
-          <div className="py-5"><dt className="text-xs text-muted">이메일</dt><dd className="mt-2 font-medium">{user?.email||'-'}</dd></div>
-          <div className="py-5"><dt className="text-xs text-muted">권한</dt><dd className="mt-2 flex items-center gap-2 font-medium"><ShieldCheck className="size-4"/>{user?.role||'-'}</dd></div>
-        </dl>
-        <p className="mt-4 text-xs leading-5 text-muted">회원정보 수정 기능은 백엔드 API가 제공되면 활성화됩니다.</p>
+        <State loading={profile.loading} error={profile.error} empty={!member}>
+          <dl className="divide-y divide-line rounded-lg border border-line bg-white px-5">
+            {member&&[['회원 번호',member.id],['이름',member.name],['이메일',member.email],['전화번호',member.phone],['생년월일',member.birth],['성별',member.gender],['가입일',member.createdAt?new Date(member.createdAt).toLocaleString('ko-KR'):undefined]].map(([label,value])=><div className="py-5" key={String(label)}><dt className="text-xs text-muted">{label}</dt><dd className="mt-2 font-medium">{value||'-'}</dd></div>)}
+            <div className="py-5"><dt className="text-xs text-muted">권한</dt><dd className="mt-2 flex items-center gap-2 font-medium"><ShieldCheck className="size-4"/>{member?.role||'-'}</dd></div>
+          </dl>
+        </State>
       </section>
       <section>
         <div className="mb-5 flex items-center gap-3"><Bell className="size-5"/><h2 className="text-xl font-semibold">알림</h2></div>
