@@ -10,7 +10,7 @@ export interface SpringPage<T> { content:T[]; number:number; size:number; totalE
 export interface News { id:number; title:string; content:string; category?:string; thumbnailUrl?:string; imageUrl?:string; publishedAt?:string; createdAt?:string; viewCount?:number }
 export type Position = 'GK'|'DF'|'MF'|'FW';
 export interface PlayerStats { appearances?:number; goals?:number; assists?:number; yellowCards?:number; redCards?:number; [key:string]:string|number|undefined }
-export interface Player { id:number; name:string; backNumber?:number; number?:number; position:Position; nationality?:string; profileImageUrl?:string; imageUrl?:string; introduction?:string; birth?:string; birthDate?:string; height?:number; weight?:number; stats?:PlayerStats }
+export interface Player { id:number; name:string; backNumber?:number; number?:number; position:Position; nationality?:string; profileImageUrl?:string; imageUrl?:string; introduction?:string; stats?:PlayerStats }
 export type PlayerApplicationStatus = 'PENDING'|'APPROVED'|'REJECTED';
 export interface PlayerApplication { id:number; applicantName?:string; name:string; backNumber:number; position:Position; nationality:string; profileImageUrl?:string; status:PlayerApplicationStatus; rejectReason?:string; createdAt?:string }
 export interface Match { id:number; season:string; round?:number|string; competition?:string; status:'SCHEDULED'|'LIVE'|'FINISHED'|'CANCELED'; matchDate:string; homeTeam?:string; awayTeam?:string; opponent?:string; stadium?:string; venue?:string; homeScore?:number; awayScore?:number; isHome?:boolean }
