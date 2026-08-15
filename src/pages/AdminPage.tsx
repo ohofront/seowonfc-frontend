@@ -4,6 +4,7 @@ import {create,list,remove,update} from '../api/resource';
 import {PageHeader,State} from '../components/UI';
 import {useAsync} from '../hooks/useAsync';
 import type {Page} from '../types';
+import {Link} from 'react-router-dom';
 
 type ResourceKey='news'|'players'|'matches'|'sponsors'|'events';
 type FieldType='text'|'number'|'url'|'select'|'textarea'|'datetime-local';
@@ -98,7 +99,7 @@ export default function AdminPage(){
   const del=async(id:unknown)=>{if(!confirm('정말 삭제하시겠습니까? 삭제한 정보는 복구할 수 없습니다.'))return;await remove(`/admin/${resource}`,String(id));await records.reload()};
 
   return <div className="container-page page-space">
-    <PageHeader title="관리자" description="서원 FC 홈페이지에 표시할 콘텐츠를 관리합니다." action={<button className="btn-primary" onClick={()=>start()}>새 항목 등록</button>}/>
+    <PageHeader title="관리자" description="서원 FC 홈페이지에 표시할 콘텐츠를 관리합니다." action={<div className="flex gap-2"><Link className="btn-primary" to="/admin/player-applications">선수 신청 관리</Link><button className="btn-secondary" onClick={()=>start()}>새 항목 등록</button></div>}/>
     <div className="mb-8 flex gap-2 overflow-x-auto">{resources.map(([key,label])=><button key={key} className={resource===key?'btn-primary':'btn-secondary'} onClick={()=>{setResource(key);close()}}>{label}</button>)}</div>
     {editing&&<AdminForm title={`${resourceLabel(resource)} ${isEdit?'수정':'등록'}`} fields={activeFields} values={form} error={formError} onChange={(name,value)=>setForm(current=>({...current,[name]:value}))} onSubmit={save} onCancel={close}/>}
     <State loading={records.loading} error={records.error} empty={!records.data?.content.length} emptyMessage={`등록된 ${resourceLabel(resource)} 정보가 없습니다.`}>
