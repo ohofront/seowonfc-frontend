@@ -3,6 +3,7 @@ import {getMatches,getStandings} from '../api/matches';
 import {useAsync} from '../hooks/useAsync';
 import type {Match,Standing} from '../types';
 import {PageHeader,State} from '../components/UI';
+import {formatKoreanDateTime} from '../utils/dateTime';
 
 export function MatchesPage(){
   const [season,setSeason]=useState('');
@@ -26,7 +27,7 @@ function MatchCard({match:m}:{match:Match}){
   const home=m.homeTeam??(m.isHome!==false?'서원 FC':m.opponent)??'-';
   const away=m.awayTeam??(m.isHome!==false?m.opponent:'서원 FC')??'-';
   return <article className="card grid items-center gap-4 p-5 sm:grid-cols-[1fr_2fr_1fr]">
-    <div><p className="text-xs font-medium">{[m.season,m.competition,m.round&&`${m.round}R`].filter(Boolean).join(' · ')}</p><p className="mt-2 text-xs text-muted">{new Date(m.matchDate).toLocaleString('ko-KR')}</p><p className="mt-1 text-sm">{m.stadium||m.venue||'장소 미정'}</p></div>
+    <div><p className="text-xs font-medium">{[m.season,m.competition,m.round&&`${m.round}R`].filter(Boolean).join(' · ')}</p><p className="mt-2 text-xs text-muted">{formatKoreanDateTime(m.matchDate)} KST</p><p className="mt-1 text-sm">{m.stadium||m.venue||'장소 미정'}</p></div>
     <div className="flex items-center justify-center gap-4 text-center"><strong className="w-28">{home}</strong><span className="text-xl font-bold">{m.status==='FINISHED'||m.status==='LIVE'?`${m.homeScore??0} : ${m.awayScore??0}`:'VS'}</span><strong className="w-28">{away}</strong></div>
     <span className="justify-self-start rounded bg-surface px-3 py-1 text-xs sm:justify-self-end">{{SCHEDULED:'예정',LIVE:'진행 중',FINISHED:'종료',CANCELED:'취소'}[m.status]}</span>
   </article>;
