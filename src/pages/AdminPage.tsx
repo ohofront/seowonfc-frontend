@@ -110,7 +110,7 @@ export default function AdminPage(){
   const del=async(id:unknown)=>{if(!confirm('정말 삭제하시겠습니까? 삭제한 정보는 복구할 수 없습니다.'))return;await remove(`/admin/${resource}`,String(id));await records.reload()};
 
   return <div className="container-page page-space">
-    <PageHeader title="관리자" description="서원 FC 홈페이지에 표시할 콘텐츠를 관리합니다." action={<div className="flex gap-2"><Link className="btn-primary" to="/admin/player-applications">선수 신청 관리</Link><button className="btn-secondary" onClick={()=>start()}>새 항목 등록</button></div>}/>
+    <PageHeader title="관리자" description="서원 FC 홈페이지에 표시할 콘텐츠를 관리합니다." action={<div className="flex flex-wrap gap-2"><Link className="btn-primary" to="/admin/player-applications">선수 신청 관리</Link><Link className="btn-primary" to="/admin/sponsor-applications">스폰서 신청 관리</Link><button className="btn-secondary" onClick={()=>start()}>새 항목 등록</button></div>}/>
     <div className="mb-8 flex gap-2 overflow-x-auto">{resources.map(([key,label])=><button key={key} className={resource===key?'btn-primary':'btn-secondary'} onClick={()=>{setResource(key);close()}}>{label}</button>)}</div>
     {editing&&<AdminForm
       title={`${resourceLabel(resource)} ${isEdit?'수정':'등록'}`}
