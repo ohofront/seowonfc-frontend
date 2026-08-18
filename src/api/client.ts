@@ -24,14 +24,21 @@ client.interceptors.request.use((config) => {
 
 client.interceptors.response.use((response) => {
   emit('api:request-end');
-  const method=response.config.method?.toUpperCase();
-  const body=response.data as {success?:boolean;message?:string}|undefined;
-  if(method&&['POST','PUT','PATCH','DELETE'].includes(method)&&body?.success!==false){
-    emit('api:feedback',{type:'success',...successFeedback(method,response.config.url,body?.message)});
+  const method=response.config.method?.toUpperCase()??'GET';
+  const body=response.data as ApiResponse<unknown>|ApiErrorResponse;
+  const request=describeRequest(method,response.config.url);
+  if(isApiErrorResponse(body)){
+    emit('api:feedback',{type:'error',...errorFeedback(request,body.message,body.errors)});
+    return Promise.reject(new ApiResponseError(body.code,body.message,body.errors??[]));
+  }
+  if(['POST','PUT','PATCH','DELETE'].includes(method)){
+    emit('api:feedback',{type:'success',title:`${request} 완료`,message:`${request} 요청이 성공적으로 완료되었습니다.`});
   }
   return response;
 }, (error) => {
   emit('api:request-end');
+  const method=error.config?.method?.toUpperCase()??'GET';
+  const request=describeRequest(method,error.config?.url);
   if (error.response?.status === 401) {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('user');
@@ -40,10 +47,10 @@ client.interceptors.response.use((response) => {
   }
   const body:unknown = error.response?.data;
   if (isApiErrorResponse(body)) {
-    emit('api:feedback',{type:'error',title:'요청 실패',message:body.message});
+    emit('api:feedback',{type:'error',...errorFeedback(request,body.message,body.errors)});
     return Promise.reject(new ApiResponseError(body.code, body.message, body.errors ?? []));
   }
-  emit('api:feedback',{type:'error',title:'요청 실패',message:error.message||'서버와 통신하지 못했습니다.'});
+  emit('api:feedback',{type:'error',...errorFeedback(request,error.message||'서버와 통신하지 못했습니다.')});
   return Promise.reject(error);
 });
 
@@ -56,17 +63,48 @@ const isApiErrorResponse = (body:unknown):body is ApiErrorResponse => typeof bod
   && 'message' in body
   && typeof body.message === 'string';
 
-const successFeedback=(method:string,url:string|undefined,serverMessage:string|undefined)=>{
-  const resource=url?.match(/^\/admin\/(news|events)(?:\/|$)/)?.[1];
-  if(resource){
-    const label=resource==='news'?'뉴스':'이벤트';
-    const action=method==='POST'?'등록':method==='DELETE'?'삭제':'수정';
-    return {
-      title:`${label} ${action} 완료`,
-      message:`${label}가 성공적으로 ${action}되었습니다.`,
-    };
+const resourceLabels:Record<string,string>={news:'뉴스',players:'선수',matches:'경기',sponsors:'스폰서',events:'이벤트'};
+const boardLabels:Record<string,string>={FREE:'자유게시판',CHEERING:'응원게시판'};
+
+const describeRequest=(method:string,rawUrl:string|undefined)=>{
+  const url=(rawUrl??'').split('?')[0].replace(/^.*\/api\/v1/,'');
+  if(url==='/auth/login')return '로그인';
+  if(url==='/auth/signup')return '회원가입';
+  if(url==='/users/me')return method==='GET'?'내 정보 조회':'내 정보 수정';
+  if(url==='/images')return '이미지 업로드';
+  if(url==='/player-applications')return method==='POST'?'선수 등록 신청':'선수 등록 신청 조회';
+  if(url==='/player-applications/me')return '내 선수 등록 신청 조회';
+  if(url==='/admin/player-applications')return '대기 중인 선수 등록 신청 조회';
+  if(/^\/admin\/player-applications\/[^/]+\/approve$/.test(url))return '선수 등록 신청 승인';
+  if(/^\/admin\/player-applications\/[^/]+\/reject$/.test(url))return '선수 등록 신청 반려';
+  if(/^\/events\/[^/]+\/apply$/.test(url))return '이벤트 응모';
+  if(/^\/events\/[^/]+\/winners$/.test(url))return '이벤트 당첨자 조회';
+  if(url==='/notifications/me')return '알림 목록 조회';
+  if(/^\/notifications\/[^/]+\/read$/.test(url))return '알림 읽음 처리';
+  if(url==='/standings')return '리그 순위 조회';
+  const board=url.match(/^\/boards\/([^/]+)\/posts(?:\/[^/]+)?(\/comments)?$/);
+  if(board){
+    const label=boardLabels[board[1]]??'게시판';
+    if(board[2])return `${label} 댓글 등록`;
+    if(method==='GET')return `${label} ${url.match(/\/posts\/[^/]+$/)?'게시글 조회':'목록 조회'}`;
+    return `${label} 게시글 ${method==='POST'?'등록':'수정'}`;
   }
-  return {title:'처리 완료',message:serverMessage||'요청이 성공적으로 처리되었습니다.'};
+  const admin=url.match(/^\/admin\/(news|players|matches|sponsors|events)(?:\/[^/]+)?$/);
+  if(admin){
+    const action=method==='POST'?'등록':method==='DELETE'?'삭제':'수정';
+    return `${resourceLabels[admin[1]]} ${action}`;
+  }
+  const publicResource=url.match(/^\/(news|players|matches|sponsors|events)(\/[^/]+)?$/);
+  if(publicResource)return `${resourceLabels[publicResource[1]]} ${publicResource[2]?'상세 조회':'목록 조회'}`;
+  return '요청 처리';
+};
+
+const errorFeedback=(request:string,message:string,errors:ApiFieldError[]=[])=>{
+  const details=errors.map(({field,reason})=>`${field}: ${reason}`).join(', ');
+  return {
+    title:`${request} 실패`,
+    message:details?`${message} (${details})`:message,
+  };
 };
 
 function assertSuccess<T>(body:ApiResponse<T>|ApiErrorResponse): asserts body is ApiResponse<T> {
