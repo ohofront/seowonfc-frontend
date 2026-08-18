@@ -1,9 +1,9 @@
 const KOREA_TIME_ZONE='Asia/Seoul';
 
-/** datetime-local 입력값을 한국 시간 오프셋이 포함된 API 값으로 변환한다. */
-export const toKoreanOffsetDateTime=(value:string)=>{
-  const withSeconds=value.length===16?`${value}:00`:value;
-  return `${withSeconds}+09:00`;
+/** datetime-local 입력값을 타임존 없는 API 로컬 일시로 변환한다. */
+export const toLocalDateTime=(value:string)=>{
+  const match=value.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})(?::(\d{2}))?/);
+  return match?`${match[1]}:${match[2]??'00'}`:value;
 };
 
 /** 타임존이 생략된 서버 일시는 UTC로 간주한다. */

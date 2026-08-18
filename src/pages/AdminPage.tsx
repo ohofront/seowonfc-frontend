@@ -5,7 +5,7 @@ import {PageHeader,State} from '../components/UI';
 import {useAsync} from '../hooks/useAsync';
 import type {Page} from '../types';
 import {Link} from 'react-router-dom';
-import {formatKoreanDateTime,toKoreanDateTimeInput,toKoreanOffsetDateTime} from '../utils/dateTime';
+import {formatKoreanDateTime,toKoreanDateTimeInput,toLocalDateTime} from '../utils/dateTime';
 import {createNews,updateNews,type NewsInput} from '../api/news';
 import {createEvent,updateEvent,type EventInput} from '../api/events';
 
@@ -91,7 +91,7 @@ export default function AdminPage(){
       const value=form[field.name];
       if(value===undefined||value==='')return;
       if(field.type==='number')payload[field.name]=Number(value);
-      else if(field.type==='datetime-local')payload[field.name]=toKoreanOffsetDateTime(value);
+      else if(field.type==='datetime-local')payload[field.name]=toLocalDateTime(value);
       else payload[field.name]=value.trim();
     });
     try{
