@@ -11,7 +11,7 @@ export const getEventWinners = (id:string) => client.get(`/events/${id}/winners`
 
 const eventFormData=(input:EventInput,file?:File|null)=>{
   const formData=new FormData();
-  formData.append('data',new Blob([JSON.stringify(input)],{type:'application/json'}));
+  formData.append('data',JSON.stringify(input));
   if(file)formData.append('file',file);
   return formData;
 };

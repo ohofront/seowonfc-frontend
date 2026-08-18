@@ -9,7 +9,7 @@ export const getNewsDetail=(id:string)=>detail<News>('/news',id);
 
 const newsFormData=(input:NewsInput,file?:File|null)=>{
   const formData=new FormData();
-  formData.append('data',new Blob([JSON.stringify(input)],{type:'application/json'}));
+  formData.append('data',JSON.stringify(input));
   if(file)formData.append('file',file);
   return formData;
 };
