@@ -209,7 +209,7 @@ export async function createNews(input: {
   title: string; content: string; category: string; thumbnailUrl?: string | null;
 }, file?: File | null) {
   const formData = new FormData();
-  formData.append('data', JSON.stringify(input));
+  formData.append('data', new Blob([JSON.stringify(input)], { type: 'application/json' }));
   if (file) formData.append('file', file);
 
   const res = await client.post('/admin/news', formData, {
@@ -223,9 +223,48 @@ export async function createNews(input: {
 
 **주의**
 
-- 백엔드가 `@RequestParam("data") String`으로 받으므로 `data` 파트는 `JSON.stringify(...)` 문자열을 그대로 append합니다. `Blob`으로 감싸면 filename이 붙은 파일 파트로 인식될 수 있습니다.
+- `data` 파트는 반드시 `Blob([JSON.stringify(...)], { type: 'application/json' })` 형태로 감싸야 서버가 정상 파싱합니다. 그냥 문자열로 append하면 실패할 수 있습니다.
 - 수정(edit) 화면에서 "이미지를 새로 첨부하지 않으면 기존 이미지를 유지"하는 동작이 되어야 합니다 — `file`을 비워서 보내면 백엔드가 기존 URL을 그대로 씁니다(백엔드에서 이미 처리됨).
 - 회원용 뉴스/이벤트 조회 화면(`/news`, `/events`)은 변경 없음 — 응답 구조(`thumbnailUrl`, `imageUrl`)가 URL 문자열인 건 동일하므로 표시 로직은 그대로 둡니다.
+
+### 5-13. 스폰서 신청/승인 (추가 기능 — 로그인 불필요한 공개 페이지)
+
+> 스폰서 등록을 "관리자가 직접 입력"하는 방식에서 **누구나(비로그인 포함) 신청 → 관리자 승인** 방식으로 변경합니다. 실제 스폰서가 되려는 기업/후원자는 서원 FC 회원이 아니므로, 이 신청 페이지만은 **로그인 없이** 접근·제출 가능해야 합니다. 백엔드 상세는 `CODEX_백엔드_스폰서신청_지시서.md` 참고.
+
+**API 엔드포인트**
+
+| Method | Endpoint | 설명 | 인증 |
+|---|---|---|---|
+| POST | `/api/v1/sponsor-applications` | 스폰서 신청 (multipart: `data` + `file`) | **불필요 (로그인 없이 가능)** |
+| GET | `/api/v1/admin/sponsor-applications` | 대기중인 신청 목록 | ADMIN |
+| POST | `/api/v1/admin/sponsor-applications/{id}/approve` | 승인 → 실제 Sponsor로 등록 | ADMIN |
+| POST | `/api/v1/admin/sponsor-applications/{id}/reject` | 반려 (body: `{ "reason": "사유" }`) | ADMIN |
+
+**공개 페이지 (비로그인 접근 가능)**
+
+1. **스폰서 신청 폼** (`/sponsors/apply`)
+   - 로그인 여부와 무관하게 접근 가능 — 다른 폼들과 달리 로그인 리다이렉트를 걸지 않습니다
+   - 필드: 회사명, 담당자명, 담당자 이메일, 담당자 연락처, 희망 등급(OFFICIAL/PARTNER 선택), 로고 이미지(파일 업로드), 소개 메시지, 웹사이트 링크
+   - 뉴스/이벤트와 동일한 방식으로 `data`(JSON 문자열, Blob 아님) + `file`을 `FormData`로 함께 전송
+   - 제출 성공 시 "신청이 접수되었습니다. 검토 후 연락드리겠습니다" 안내
+   - 스폰서 목록 페이지(`/sponsors`) 하단에 "스폰서 신청하기" 버튼 추가
+
+**관리자용 페이지**
+
+- **스폰서 신청 관리** (`/admin/sponsor-applications`)
+  - `GET /api/v1/admin/sponsor-applications`로 대기중인 신청 목록 표시 (회사명, 담당자, 연락처, 희망등급, 로고 미리보기, 메시지)
+  - **승인**/**반려** 버튼 — 선수 등록 신청 관리 화면(5-11)과 동일한 UI 패턴 재사용
+  - 승인 클릭 → `POST /api/v1/admin/sponsor-applications/{id}/approve` → 성공 시 목록에서 제거, 스폰서 목록에 자동 반영됨을 안내
+  - 반려 클릭 → 사유 입력 모달 → `POST /api/v1/admin/sponsor-applications/{id}/reject`
+
+**주의**
+
+- 이 폼은 프로젝트 내에서 **유일하게 로그인 없이 제출 가능한 폼**입니다. `AuthContext`나 라우트 가드에서 예외 처리해야 합니다.
+- 스팸 방지를 위해 프론트에서 간단한 클라이언트 측 검증(필수값, 이메일 형식)은 넣되, 별도 캡차 등은 이번 범위에서 제외합니다.
+
+**디자인**
+
+기존 7장의 블랙&화이트 미니멀 디자인 시스템을 그대로 적용합니다.
 
 ---
 
