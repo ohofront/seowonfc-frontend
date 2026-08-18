@@ -209,7 +209,7 @@ export async function createNews(input: {
   title: string; content: string; category: string; thumbnailUrl?: string | null;
 }, file?: File | null) {
   const formData = new FormData();
-  formData.append('data', new Blob([JSON.stringify(input)], { type: 'application/json' }));
+  formData.append('data', JSON.stringify(input));
   if (file) formData.append('file', file);
 
   const res = await client.post('/admin/news', formData, {
@@ -223,7 +223,7 @@ export async function createNews(input: {
 
 **주의**
 
-- `data` 파트는 반드시 `Blob([JSON.stringify(...)], { type: 'application/json' })` 형태로 감싸야 서버가 정상 파싱합니다. 그냥 문자열로 append하면 실패할 수 있습니다.
+- 백엔드가 `@RequestParam("data") String`으로 받으므로 `data` 파트는 `JSON.stringify(...)` 문자열을 그대로 append합니다. `Blob`으로 감싸면 filename이 붙은 파일 파트로 인식될 수 있습니다.
 - 수정(edit) 화면에서 "이미지를 새로 첨부하지 않으면 기존 이미지를 유지"하는 동작이 되어야 합니다 — `file`을 비워서 보내면 백엔드가 기존 URL을 그대로 씁니다(백엔드에서 이미 처리됨).
 - 회원용 뉴스/이벤트 조회 화면(`/news`, `/events`)은 변경 없음 — 응답 구조(`thumbnailUrl`, `imageUrl`)가 URL 문자열인 건 동일하므로 표시 로직은 그대로 둡니다.
 
