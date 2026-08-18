@@ -32,7 +32,8 @@ client.interceptors.response.use((response) => {
     return Promise.reject(new ApiResponseError(body.code,body.message,body.errors??[]));
   }
   if(['POST','PUT','PATCH','DELETE'].includes(method)){
-    emit('api:feedback',{type:'success',title:`${request} 완료`,message:`${request} 요청이 성공적으로 완료되었습니다.`});
+    const message=request==='스폰서 신청'?'신청이 접수되었습니다. 검토 후 연락드리겠습니다.':`${request} 요청이 성공적으로 완료되었습니다.`;
+    emit('api:feedback',{type:'success',title:`${request} 완료`,message});
   }
   return response;
 }, (error) => {
@@ -72,11 +73,15 @@ const describeRequest=(method:string,rawUrl:string|undefined)=>{
   if(url==='/auth/signup')return '회원가입';
   if(url==='/users/me')return method==='GET'?'내 정보 조회':'내 정보 수정';
   if(url==='/images')return '이미지 업로드';
+  if(url==='/sponsor-applications')return '스폰서 신청';
   if(url==='/player-applications')return method==='POST'?'선수 등록 신청':'선수 등록 신청 조회';
   if(url==='/player-applications/me')return '내 선수 등록 신청 조회';
   if(url==='/admin/player-applications')return '대기 중인 선수 등록 신청 조회';
   if(/^\/admin\/player-applications\/[^/]+\/approve$/.test(url))return '선수 등록 신청 승인';
   if(/^\/admin\/player-applications\/[^/]+\/reject$/.test(url))return '선수 등록 신청 반려';
+  if(url==='/admin/sponsor-applications')return '대기 중인 스폰서 신청 조회';
+  if(/^\/admin\/sponsor-applications\/[^/]+\/approve$/.test(url))return '스폰서 신청 승인';
+  if(/^\/admin\/sponsor-applications\/[^/]+\/reject$/.test(url))return '스폰서 신청 반려';
   if(/^\/events\/[^/]+\/apply$/.test(url))return '이벤트 응모';
   if(/^\/events\/[^/]+\/winners$/.test(url))return '이벤트 당첨자 조회';
   if(url==='/notifications/me')return '알림 목록 조회';
