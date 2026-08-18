@@ -143,6 +143,90 @@ Codex는 아래 순서대로 페이지를 구현합니다. (백엔드 API 명세
 - role이 `ADMIN`이 아니면 접근 시 홈으로 리다이렉트
 - 우선순위가 가장 낮으므로, 일반 회원용 페이지가 전부 끝난 뒤 마지막에 구현
 
+### 5-11. 선수 등록 신청/승인 (추가 기능 — 기존 선수단 기능 개선)
+
+> 기존 "관리자가 선수를 직접 등록"하는 방식은 비효율적이라 판단되어, **회원이 신청 → 관리자가 승인/반려**하는 방식으로 변경합니다. 백엔드에 아래 API가 새로 추가되었습니다.
+
+**API 엔드포인트**
+
+| Method | Endpoint | 설명 | 인증 |
+|---|---|---|---|
+| POST | `/api/v1/player-applications` | 선수 등록 신청 | 회원 |
+| GET | `/api/v1/player-applications/me` | 내 신청 목록 조회 | 회원 |
+| GET | `/api/v1/admin/player-applications` | 대기중인 신청 목록 (관리자) | ADMIN |
+| POST | `/api/v1/admin/player-applications/{id}/approve` | 신청 승인 → 실제 Player로 등록 | ADMIN |
+| POST | `/api/v1/admin/player-applications/{id}/reject` | 신청 반려 (body: `{ "reason": "사유" }`) | ADMIN |
+
+신청 상태(`status`)는 `PENDING`(대기) / `APPROVED`(승인) / `REJECTED`(반려) 세 가지입니다.
+
+**회원용 페이지**
+
+1. **선수 등록 신청 폼** (`/players/apply`)
+   - 필드: 이름, 등번호, 포지션(GK/DF/MF/FW 선택), 국적, **프로필 사진(파일 업로드)**
+   - 로그인 필요 — 비로그인 접근 시 로그인 페이지로 리다이렉트
+   - 사진 파일 선택 시 `POST /api/v1/images` (folder: `player-applications`)로 먼저 업로드 → 반환된 URL을 `profileImageUrl`에 담아 제출 (백엔드 상세는 `CODEX_백엔드_이미지업로드_지시서.md` 참고 — 이 업로드 API는 관리자 전용이 아니라 로그인 회원이면 누구나 호출 가능하도록 만들어져 있음)
+   - 제출 시 `POST /api/v1/player-applications` 호출, 성공하면 "신청이 접수되었습니다. 관리자 승인 후 반영됩니다" 안내 후 `/players/my-applications`로 이동
+   - 선수단 목록 페이지(`/players`) 상단에 "선수 등록 신청" 버튼 추가
+
+2. **내 신청 내역** (`/players/my-applications`)
+   - `GET /api/v1/player-applications/me` 목록 조회
+   - 각 항목에 상태 배지 표시: 대기중(회색) / 승인됨(검정) / 반려됨(빨강, `rejectReason` 함께 노출)
+
+**관리자용 페이지**
+
+- 기존 "선수 직접 등록" 폼은 **그대로 유지**하되(관리자가 급히 등록해야 할 때를 위한 백업 경로), 메인 동선은 아래 승인 화면으로 변경합니다.
+- **선수 등록 신청 관리** (`/admin/player-applications`)
+  - `GET /api/v1/admin/player-applications`로 대기중인 신청 목록 표시
+  - 각 항목에 신청자 이름(`applicantName`), 신청 정보(이름/등번호/포지션 등), **승인**/**반려** 버튼
+  - 승인 클릭 → `POST /api/v1/admin/player-applications/{id}/approve` 호출 → 성공 시 목록에서 제거, 선수단 목록에 자동 반영됨을 안내
+  - 반려 클릭 → 사유 입력 모달 → `POST /api/v1/admin/player-applications/{id}/reject` 호출
+
+**디자인**
+
+기존 7장의 블랙&화이트 미니멀 디자인 시스템을 그대로 적용합니다. 상태 배지는 색상 대신 텍스트/테두리 굵기로 구분하고, 승인/반려 버튼은 각각 Primary(검정 배경)/Secondary(테두리만) 스타일을 사용합니다.
+
+### 5-12. 뉴스/이벤트 이미지 파일 업로드 + 이벤트 날짜 단일화 (추가 기능 — 기존 폼 변경)
+
+> 백엔드의 뉴스·이벤트 등록/수정 API가 `application/json`에서 **`multipart/form-data`**로 바뀌었습니다. JSON 데이터와 이미지 파일을 한 번의 요청으로 함께 보냅니다. 백엔드 상세는 `CODEX_백엔드_뉴스이벤트개선_지시서.md` 참고.
+
+**변경되는 화면**
+
+1. **관리자 뉴스 등록/수정 폼** (`/admin/news/new`, `/admin/news/:id/edit`)
+   - "썸네일 이미지 주소" 텍스트 입력칸을 **파일 선택(`<input type="file" accept="image/*">`)**으로 교체
+   - URL 직접 입력은 없애고, 파일을 선택하면 서버가 업로드까지 처리 (프론트는 파일만 첨부해서 보내면 됨)
+
+2. **관리자 이벤트 등록/수정 폼** (`/admin/events/new`, `/admin/events/:id/edit`)
+   - "시작일시"/"종료일시" 2개 입력 필드를 **날짜 선택 1개**(`<input type="date">`)로 교체 → 필드명 `eventDate`
+   - 이미지 파일 첨부 필드 추가 (뉴스와 동일한 방식)
+
+**API 호출 방식 변경**
+
+기존에는 `client.post('/admin/news', jsonBody)` 형태였다면, 이제는 아래처럼 `FormData`로 `data`(JSON)와 `file`(이미지)을 함께 보냅니다.
+
+```ts
+// src/api/news.ts (예시)
+export async function createNews(input: {
+  title: string; content: string; category: string; thumbnailUrl?: string | null;
+}, file?: File | null) {
+  const formData = new FormData();
+  formData.append('data', new Blob([JSON.stringify(input)], { type: 'application/json' }));
+  if (file) formData.append('file', file);
+
+  const res = await client.post('/admin/news', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data.data;
+}
+```
+
+이벤트도 동일한 패턴으로, `input`에 `eventDate`(예: `"2026-08-20"`)를 넣고 `title`/`content`/`imageUrl`과 함께 `data` 파트로 보냅니다.
+
+**주의**
+
+- `data` 파트는 반드시 `Blob([JSON.stringify(...)], { type: 'application/json' })` 형태로 감싸야 서버가 정상 파싱합니다. 그냥 문자열로 append하면 실패할 수 있습니다.
+- 수정(edit) 화면에서 "이미지를 새로 첨부하지 않으면 기존 이미지를 유지"하는 동작이 되어야 합니다 — `file`을 비워서 보내면 백엔드가 기존 URL을 그대로 씁니다(백엔드에서 이미 처리됨).
+- 회원용 뉴스/이벤트 조회 화면(`/news`, `/events`)은 변경 없음 — 응답 구조(`thumbnailUrl`, `imageUrl`)가 URL 문자열인 건 동일하므로 표시 로직은 그대로 둡니다.
+
 ---
 
 ## 6. API 연동 참고
@@ -253,7 +337,7 @@ Tailwind 기본 breakpoint를 그대로 사용합니다.
 
 ## 9. 배포 — Netlify
 
-### 8-1. netlify.toml (프로젝트 루트)
+### 9-1. netlify.toml (프로젝트 루트)
 
 ```toml
 [build]
@@ -268,7 +352,7 @@ Tailwind 기본 breakpoint를 그대로 사용합니다.
 
 SPA이므로 새로고침 시 404가 나지 않도록 redirects 설정이 필수입니다.
 
-### 8-2. Netlify 대시보드 설정
+### 9-2. Netlify 대시보드 설정
 1. GitHub 저장소(`ohofront/seowonfc-frontend`) 연결
 2. Build command: `npm run build`, Publish directory: `dist`
 3. Environment variables에 `VITE_API_BASE_URL` 값을 운영 API 주소로 등록
