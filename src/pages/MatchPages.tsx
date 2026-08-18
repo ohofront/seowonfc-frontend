@@ -6,17 +6,20 @@ import {PageHeader,State} from '../components/UI';
 import {formatKoreanDateTime} from '../utils/dateTime';
 
 export function MatchesPage(){
-  const [season,setSeason]=useState('');
-  const [status,setStatus]=useState('');
-  const {data,loading,error}=useAsync(()=>getMatches({season:season||undefined,status:status||undefined,size:50}),[season,status]);
+  const [seasonInput,setSeasonInput]=useState('');
+  const [statusInput,setStatusInput]=useState('');
+  const [filters,setFilters]=useState({season:'',status:''});
+  const {data,loading,error}=useAsync(()=>getMatches({season:filters.season||undefined,status:filters.status||undefined,size:50}),[filters]);
+  const search=(event:React.FormEvent)=>{event.preventDefault();setFilters({season:seasonInput.trim(),status:statusInput})};
   return <div className="container-page page-space">
     <PageHeader title="경기 일정 / 결과" description="서원 FC의 경기 일정을 확인하세요."/>
-    <div className="mb-8 grid gap-3 sm:grid-cols-2">
-      <input className="field" placeholder="시즌 (예: 2026)" value={season} onChange={e=>setSeason(e.target.value)}/>
-      <select className="field" value={status} onChange={e=>setStatus(e.target.value)}>
+    <form className="mb-8 grid gap-3 sm:grid-cols-[1fr_1fr_auto]" onSubmit={search}>
+      <input className="field" placeholder="시즌 (예: 2026)" value={seasonInput} onChange={e=>setSeasonInput(e.target.value)}/>
+      <select className="field" value={statusInput} onChange={e=>setStatusInput(e.target.value)}>
         <option value="">전체 상태</option><option value="SCHEDULED">예정</option><option value="FINISHED">종료</option><option value="CANCELED">취소</option>
       </select>
-    </div>
+      <button className="btn-primary" type="submit">검색</button>
+    </form>
     <State loading={loading} error={error} empty={!data?.content.length} emptyMessage="아직 등록된 경기일정/결과가 없습니다.">
       <div className="space-y-4">{data?.content.map(m=><MatchCard key={m.id} match={m}/>)}</div>
     </State>
