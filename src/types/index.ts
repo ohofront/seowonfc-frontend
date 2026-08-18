@@ -19,6 +19,6 @@ export type BoardType = 'free'|'cheering';
 export interface Post { id:number; boardType?:string; userId?:number; title:string; content:string; authorName?:string; createdAt:string; viewCount?:number; likeCount?:number; commentCount?:number; comments?:Comment[] }
 export interface Comment { id:number; userId?:number; content:string; authorName?:string; likeCount?:number; createdAt:string }
 export interface Sponsor { id:number; name:string; tier:'OFFICIAL'|'PARTNER'; logoUrl?:string; linkUrl?:string; websiteUrl?:string }
-export interface EventItem { id:number; title:string; content:string; thumbnailUrl?:string; startDate:string; endDate:string; status?:string; applied?:boolean; winners?:string[] }
+export interface EventItem { id:number; title:string; content:string; imageUrl?:string; thumbnailUrl?:string; eventDate:string; startDate?:string; endDate?:string; status?:string; applied?:boolean; winners?:string[] }
 export interface Notification { id:number; title:string; content:string; createdAt:string; isRead:boolean; message?:string; read?:boolean }
 export interface LoginResponse { accessToken:string; refreshToken:string; user:User }
