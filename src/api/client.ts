@@ -27,7 +27,7 @@ client.interceptors.response.use((response) => {
   const method=response.config.method?.toUpperCase();
   const body=response.data as {success?:boolean;message?:string}|undefined;
   if(method&&['POST','PUT','PATCH','DELETE'].includes(method)&&body?.success!==false){
-    emit('api:feedback',{type:'success',title:'처리 완료',message:body?.message||'요청이 성공적으로 처리되었습니다.'});
+    emit('api:feedback',{type:'success',...successFeedback(method,response.config.url,body?.message)});
   }
   return response;
 }, (error) => {
@@ -55,6 +55,19 @@ const isApiErrorResponse = (body:unknown):body is ApiErrorResponse => typeof bod
   && typeof body.code === 'number'
   && 'message' in body
   && typeof body.message === 'string';
+
+const successFeedback=(method:string,url:string|undefined,serverMessage:string|undefined)=>{
+  const resource=url?.match(/^\/admin\/(news|events)(?:\/|$)/)?.[1];
+  if(resource){
+    const label=resource==='news'?'뉴스':'이벤트';
+    const action=method==='POST'?'등록':method==='DELETE'?'삭제':'수정';
+    return {
+      title:`${label} ${action} 완료`,
+      message:`${label}가 성공적으로 ${action}되었습니다.`,
+    };
+  }
+  return {title:'처리 완료',message:serverMessage||'요청이 성공적으로 처리되었습니다.'};
+};
 
 function assertSuccess<T>(body:ApiResponse<T>|ApiErrorResponse): asserts body is ApiResponse<T> {
   if (!body.success) {
