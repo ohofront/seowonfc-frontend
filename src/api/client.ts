@@ -1,5 +1,6 @@
 import axios, { type AxiosResponse } from 'axios';
 import type { ApiErrorResponse, ApiFieldError, ApiResponse, Page, PaginationMeta } from '../types';
+import { clearAuth, getAccessToken } from '../utils/authStorage';
 
 export class ApiResponseError extends Error {
   constructor(public readonly code:number, message:string, public readonly errors:ApiFieldError[] = []) {
@@ -17,7 +18,7 @@ const emit = (name:string,detail?:unknown) => window.dispatchEvent(new CustomEve
 
 client.interceptors.request.use((config) => {
   emit('api:request-start');
-  const token = localStorage.getItem('accessToken');
+  const token = getAccessToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 },(error)=>{emit('api:request-end');return Promise.reject(error)});
@@ -41,8 +42,7 @@ client.interceptors.response.use((response) => {
   const method=error.config?.method?.toUpperCase()??'GET';
   const request=describeRequest(method,error.config?.url);
   if (error.response?.status === 401) {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('user');
+    clearAuth();
     window.dispatchEvent(new Event('auth:expired'));
     if (!location.pathname.startsWith('/login')) location.assign(`/login?redirect=${encodeURIComponent(location.pathname)}`);
   }
