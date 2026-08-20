@@ -1,7 +1,7 @@
 import {useEffect,useState} from 'react';
 import {ArrowRight,X} from 'lucide-react';
 import {Link,useNavigate} from 'react-router-dom';
-import {getLatestNotice} from '../api/news';
+import {getHomeNotice} from '../api/news';
 import type {News} from '../types';
 
 const NOTICE_HIDE_KEY='seowonfc_notice_hidden';
@@ -25,9 +25,8 @@ export default function HomePage(){
 
   useEffect(()=>{
     let active=true;
-    void getLatestNotice().then(({content})=>{
-      const latest=content[0];
-      if(active&&latest&&!isHidden(latest))setNotice(latest);
+    void getHomeNotice().then(homeNotice=>{
+      if(active&&!isHidden(homeNotice))setNotice(homeNotice);
     }).catch(()=>undefined);
     return()=>{active=false};
   },[]);
