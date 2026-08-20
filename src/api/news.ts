@@ -5,6 +5,7 @@ import type {News} from '../types';
 export interface NewsInput {title:string;content:string;category?:string;thumbnailUrl?:string|null}
 
 export const getNews=(page=0,size=9)=>list<News>('/news',{page,size});
+export const getLatestNotice=()=>list<News>('/news',{category:'NOTICE',page:0,size:1,sort:'publishedAt,desc'});
 export const getNewsDetail=(id:string)=>detail<News>('/news',id);
 
 const newsFormData=(input:NewsInput,file?:File|null)=>{
