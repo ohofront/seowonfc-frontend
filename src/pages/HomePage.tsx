@@ -57,14 +57,14 @@ export default function HomePage(){
     <section className="border-b border-line bg-ink text-white"><div className="container-page py-20 md:py-32"><p className="text-sm font-medium tracking-[.25em]">TOGETHER, WE ARE STRONGER</p><h1 className="mt-6 max-w-3xl text-4xl font-black leading-tight md:text-7xl">우리의 축구,<br/>우리의 서원 FC.</h1><p className="mt-6 max-w-xl text-white/70">경기장 안팎에서 함께 성장하는 서원 FC의 소식과 이야기를 만나보세요.</p><Link to="/matches" className="btn mt-10 bg-white text-ink">경기 일정 보기 <ArrowRight className="ml-2 size-4"/></Link></div></section>
     <section className="container-page grid gap-px bg-line py-12 md:grid-cols-3 md:py-20">{[['NEWS','구단의 새로운 소식을 확인하세요.','/news'],['TEAM','서원 FC 선수단을 소개합니다.','/players'],['EVENT','서원 FC의 다양한 이벤트를 확인하세요.','/events']].map(([title,text,to])=><Link key={title} to={to} className="group bg-white p-8 md:p-10"><p className="text-xs text-muted">{title}</p><h2 className="mt-4 text-xl font-semibold">{text}</h2><ArrowRight className="mt-8 transition-transform group-hover:translate-x-1"/></Link>)}</section>
     {notice&&<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onMouseDown={event=>{if(event.target===event.currentTarget)closeNotice()}}>
-      <div role="dialog" aria-modal="true" aria-labelledby="notice-title" className="w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-2xl">
-        <div className="cursor-pointer" role="link" tabIndex={0} onClick={openNotice} onKeyDown={event=>{if(event.key==='Enter')openNotice()}}>
-          <div className="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
-            <div><p className="text-xs font-semibold tracking-widest text-muted">NOTICE</p><h2 id="notice-title" className="mt-2 text-xl font-bold">{notice.title}</h2></div>
-            <button type="button" aria-label="공지 닫기" className="shrink-0 rounded-md p-1 text-muted hover:bg-surface hover:text-ink" onClick={event=>{event.stopPropagation();closeNotice()}}><X className="size-5"/></button>
-          </div>
+      <div role="dialog" aria-modal="true" aria-labelledby="notice-title" className="flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+        <div className="flex cursor-pointer items-start justify-between gap-4 border-b border-line px-6 py-5" role="link" tabIndex={0} onClick={openNotice} onKeyDown={event=>{if(event.key==='Enter')openNotice()}}>
+          <div><p className="text-xs font-semibold tracking-widest text-muted">NOTICE</p><h2 id="notice-title" className="mt-2 text-xl font-bold">{notice.title}</h2></div>
+          <button type="button" aria-label="공지 닫기" className="shrink-0 rounded-md p-1 text-muted hover:bg-surface hover:text-ink" onClick={event=>{event.stopPropagation();closeNotice()}}><X className="size-5"/></button>
+        </div>
+        <div className="min-h-0 cursor-pointer overflow-y-auto" role="link" tabIndex={0} onClick={openNotice} onKeyDown={event=>{if(event.key==='Enter')openNotice()}}>
           {(notice.imageUrl||notice.thumbnailUrl)&&<img src={notice.imageUrl||notice.thumbnailUrl} alt="" className="max-h-64 w-full object-cover"/>}
-          <p className="line-clamp-4 whitespace-pre-wrap px-6 py-5 text-sm leading-6 text-muted">{notice.content}</p>
+          <p className="whitespace-pre-wrap px-6 py-5 text-sm leading-6 text-muted">{notice.content}</p>
           <p className="px-6 pb-5 text-sm font-semibold">자세히 보기 <ArrowRight className="ml-1 inline size-4"/></p>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line bg-surface px-6 py-4">
