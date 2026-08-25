@@ -8,6 +8,7 @@ import {Link} from 'react-router-dom';
 import {formatKoreanDateTime,toKoreanDateTimeInput,toLocalDateTime} from '../utils/dateTime';
 import {createNews,updateNews,type NewsInput} from '../api/news';
 import {createEvent,updateEvent,type EventInput} from '../api/events';
+import {updateMatchDetails,type MatchDetailsInput} from '../api/matches';
 
 type ResourceKey='news'|'players'|'matches'|'sponsors'|'events';
 type FieldType='text'|'number'|'url'|'select'|'textarea'|'datetime-local'|'date'|'file';
@@ -50,7 +51,7 @@ const matchCreateFields:Field[]=[
   {name:'matchDate',label:'경기 일시 (한국 시간)',type:'datetime-local',required:true},
   {name:'stadium',label:'경기장',type:'text'},
 ];
-const matchUpdateFields:Field[]=[
+const matchResultFields:Field[]=[
   {name:'status',label:'경기 상태',type:'select',required:true,options:[['SCHEDULED','경기 예정'],['LIVE','진행 중'],['FINISHED','경기 종료']]},
   {name:'homeScore',label:'홈팀 점수',type:'number'},
   {name:'awayScore',label:'원정팀 점수',type:'number'},
@@ -72,7 +73,7 @@ export default function AdminPage(){
   const [imageFile,setImageFile]=useState<File|null>(null);
   const [formError,setFormError]=useState('');
   const isEdit=editing?.id!==undefined;
-  const activeFields=resource==='matches'?(isEdit?matchUpdateFields:matchCreateFields):fields[resource];
+  const activeFields=resource==='matches'?matchCreateFields:fields[resource];
 
   const start=(item:Record<string,unknown>={})=>{
     setEditing(item);
@@ -81,12 +82,12 @@ export default function AdminPage(){
     setFormError('');
   };
   const close=()=>{setEditing(null);setForm({});setImageFile(null);setFormError('')};
-  const save=async(event:React.FormEvent)=>{
+  const save=async(event:React.FormEvent,submittedFields:Field[]=activeFields,matchSection?:'details'|'result')=>{
     event.preventDefault();
-    const missing=activeFields.find(field=>field.required&&!form[field.name]?.trim());
+    const missing=submittedFields.find(field=>field.required&&!form[field.name]?.trim());
     if(missing){setFormError(`${missing.label}을(를) 입력해주세요.`);return}
     const payload:Record<string,string|number>={};
-    activeFields.forEach(field=>{
+    submittedFields.forEach(field=>{
       if(field.type==='file')return;
       const value=form[field.name];
       if(value===undefined||value==='')return;
@@ -102,6 +103,8 @@ export default function AdminPage(){
       }else if(resource==='events'){
         const input={...payload,imageUrl:String(editing?.imageUrl??editing?.thumbnailUrl??'')||null} as EventInput;
         if(isEdit)await updateEvent(String(editing.id),input,imageFile);else await createEvent(input,imageFile);
+      }else if(resource==='matches'&&isEdit&&matchSection==='details'){
+        await updateMatchDetails(String(editing.id),payload as unknown as MatchDetailsInput);
       }else if(isEdit)await update(path,String(editing.id),payload);else await create(path,payload);
       close();
       await records.reload();
@@ -112,14 +115,21 @@ export default function AdminPage(){
   return <div className="container-page page-space">
     <PageHeader title="관리자" description="서원 FC 홈페이지에 표시할 콘텐츠를 관리합니다." action={<div className="flex flex-wrap gap-2"><Link className="btn-primary" to="/admin/player-applications">선수 신청 관리</Link><Link className="btn-primary" to="/admin/sponsor-applications">스폰서 신청 관리</Link><button className="btn-secondary" onClick={()=>start()}>새 항목 등록</button></div>}/>
     <div className="mb-8 flex gap-2 overflow-x-auto">{resources.map(([key,label])=><button key={key} className={resource===key?'btn-primary':'btn-secondary'} onClick={()=>{setResource(key);close()}}>{label}</button>)}</div>
-    {editing&&<AdminForm
+    {editing&&resource==='matches'&&isEdit?<MatchEditForm
+      values={form}
+      error={formError}
+      onChange={(name,value)=>setForm(current=>({...current,[name]:value}))}
+      onSubmitDetails={event=>save(event,matchCreateFields,'details')}
+      onSubmitResult={event=>save(event,matchResultFields,'result')}
+      onCancel={close}
+    />:editing&&<AdminForm
       title={`${resourceLabel(resource)} ${isEdit?'수정':'등록'}`}
       fields={activeFields}
       values={form}
       error={formError}
       onChange={(name,value)=>setForm(current=>({...current,[name]:value}))}
       onFileChange={setImageFile}
-      onSubmit={save}
+      onSubmit={event=>save(event)}
       onCancel={close}
     />}
     <State loading={records.loading} error={records.error} empty={!records.data?.content.length} emptyMessage={`등록된 ${resourceLabel(resource)} 정보가 없습니다.`}>
@@ -130,6 +140,23 @@ export default function AdminPage(){
       </article>)}</div>
     </State>
   </div>;
+}
+
+function MatchEditForm({values,error,onChange,onSubmitDetails,onSubmitResult,onCancel}:{values:Record<string,string>;error:string;onChange:(name:string,value:string)=>void;onSubmitDetails:(event:React.FormEvent)=>void;onSubmitResult:(event:React.FormEvent)=>void;onCancel:()=>void}){
+  return <section className="mb-10 rounded-lg border border-line bg-surface p-5 md:p-7">
+    <div className="flex items-start justify-between gap-4"><div><h2 className="text-xl font-semibold">경기 수정</h2><p className="mt-2 text-sm text-muted"><span className="text-danger">*</span> 표시는 필수 입력 항목입니다.</p></div><button type="button" className="btn-secondary" onClick={onCancel}>닫기</button></div>
+    <MatchSection title="경기 정보 수정" fields={matchCreateFields} values={values} onChange={onChange} onSubmit={onSubmitDetails} submitLabel="경기 정보 저장"/>
+    <MatchSection title="결과 입력" fields={matchResultFields} values={values} onChange={onChange} onSubmit={onSubmitResult} submitLabel="결과 저장"/>
+    {error&&<p className="mt-5 text-sm text-danger">{error}</p>}
+  </section>;
+}
+
+function MatchSection({title,fields,values,onChange,onSubmit,submitLabel}:{title:string;fields:Field[];values:Record<string,string>;onChange:(name:string,value:string)=>void;onSubmit:(event:React.FormEvent)=>void;submitLabel:string}){
+  return <form className="mt-7 grid gap-5 border-t border-line pt-7 md:grid-cols-2" onSubmit={onSubmit}>
+    <h3 className="text-lg font-semibold md:col-span-2">{title}</h3>
+    {fields.map(field=><label key={field.name}><span className="label">{field.label}{field.required&&<span className="ml-1 text-danger">*</span>}</span><FormControl field={field} value={values[field.name]??''} onChange={value=>onChange(field.name,value)} onFileChange={()=>undefined}/></label>)}
+    <div className="flex justify-end md:col-span-2"><button className="btn-primary">{submitLabel}</button></div>
+  </form>;
 }
 
 function AdminForm({title,fields,values,error,onChange,onFileChange,onSubmit,onCancel}:{title:string;fields:Field[];values:Record<string,string>;error:string;onChange:(name:string,value:string)=>void;onFileChange:(file:File|null)=>void;onSubmit:(event:React.FormEvent)=>void;onCancel:()=>void}){
