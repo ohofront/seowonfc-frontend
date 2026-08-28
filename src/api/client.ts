@@ -1,6 +1,6 @@
-import axios, { type AxiosResponse } from 'axios';
+import axios, { type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
 import type { ApiErrorResponse, ApiFieldError, ApiResponse, Page, PaginationMeta } from '../types';
-import { clearAuth, getAccessToken } from '../utils/authStorage';
+import { clearAuth, getAccessToken, getAuthStorage } from '../utils/authStorage';
 
 export class ApiResponseError extends Error {
   constructor(public readonly code:number, message:string, public readonly errors:ApiFieldError[] = []) {
@@ -9,10 +9,23 @@ export class ApiResponseError extends Error {
   }
 }
 
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://seowonfc-api.onrender.com/api/v1';
+
 const client = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://seowonfc-api.onrender.com/api/v1',
+  baseURL: apiBaseUrl,
   timeout: 15000,
 });
+
+interface RetryableRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+}
+
+interface RefreshedTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
+let refreshPromise: Promise<string> | null = null;
 
 const emit = (name:string,detail?:unknown) => window.dispatchEvent(new CustomEvent(name,{detail}));
 
@@ -37,15 +50,27 @@ client.interceptors.response.use((response) => {
     emit('api:feedback',{type:'success',title:`${request} 완료`,message});
   }
   return response;
-}, (error) => {
+}, async (error) => {
   emit('api:request-end');
-  const method=error.config?.method?.toUpperCase()??'GET';
-  const request=describeRequest(method,error.config?.url);
-  if (error.response?.status === 401) {
-    clearAuth();
-    window.dispatchEvent(new Event('auth:expired'));
-    if (!location.pathname.startsWith('/login')) location.assign(`/login?redirect=${encodeURIComponent(location.pathname)}`);
+  const originalRequest=error.config as RetryableRequestConfig|undefined;
+  const status=error.response?.status;
+  const isAuthFailure=status===401||status===403;
+  const isAuthRequest=originalRequest?.url?.includes('/auth/login')||originalRequest?.url?.includes('/auth/refresh');
+
+  if(isAuthFailure&&originalRequest&&!originalRequest._retry&&!isAuthRequest){
+    originalRequest._retry=true;
+    try{
+      const accessToken=await refreshAccessToken();
+      originalRequest.headers.Authorization=`Bearer ${accessToken}`;
+      return client(originalRequest);
+    }catch(refreshError){
+      expireAuth();
+      return Promise.reject(refreshError);
+    }
   }
+
+  const method=originalRequest?.method?.toUpperCase()??'GET';
+  const request=describeRequest(method,originalRequest?.url);
   const body:unknown = error.response?.data;
   if (isApiErrorResponse(body)) {
     emit('api:feedback',{type:'error',...errorFeedback(request,body.message,body.errors)});
@@ -54,6 +79,29 @@ client.interceptors.response.use((response) => {
   emit('api:feedback',{type:'error',...errorFeedback(request,error.message||'서버와 통신하지 못했습니다.')});
   return Promise.reject(error);
 });
+
+const refreshAccessToken=()=>{
+  if(refreshPromise)return refreshPromise;
+  const storage=getAuthStorage();
+  const refreshToken=storage.getItem('refreshToken');
+  if(!refreshToken)return Promise.reject(new Error('리프레시 토큰이 없습니다.'));
+
+  refreshPromise=axios.post<ApiResponse<RefreshedTokens>|ApiErrorResponse>(`${apiBaseUrl}/auth/refresh`,{refreshToken},{timeout:15000})
+    .then((response)=>{
+      const tokens=unwrapData<RefreshedTokens>(response);
+      storage.setItem('accessToken',tokens.accessToken);
+      storage.setItem('refreshToken',tokens.refreshToken);
+      return tokens.accessToken;
+    })
+    .finally(()=>{refreshPromise=null});
+  return refreshPromise;
+};
+
+const expireAuth=()=>{
+  clearAuth();
+  window.dispatchEvent(new Event('auth:expired'));
+  if(!location.pathname.startsWith('/login'))location.assign(`/login?redirect=${encodeURIComponent(location.pathname)}`);
+};
 
 const isApiErrorResponse = (body:unknown):body is ApiErrorResponse => typeof body === 'object'
   && body !== null
