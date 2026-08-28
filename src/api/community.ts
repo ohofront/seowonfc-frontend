@@ -11,3 +11,6 @@ export const getComments = (type:BoardType,id:string) =>
   client.get(`${path(type)}/${id}/comments`).then(unwrapData<Comment[]>);
 export const addComment = (type:BoardType,id:string,content:string) =>
   client.post(`${path(type)}/${id}/comments`,{content}).then(unwrapData<Comment>);
+export const likePost = async (type:BoardType,id:string) => {
+  await client.post(`${path(type)}/${id}/like`);
+};
