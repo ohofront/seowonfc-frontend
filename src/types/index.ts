@@ -16,7 +16,7 @@ export interface PlayerApplication { id:number; applicantName?:string; name:stri
 export interface Match { id:number; season:string; round?:number|string; competition?:string; status:'SCHEDULED'|'LIVE'|'FINISHED'|'CANCELED'; matchDate:string; homeTeam?:string; awayTeam?:string; opponent?:string; stadium?:string; venue?:string; homeScore?:number; awayScore?:number; isHome?:boolean }
 export interface Standing { rank:number; team?:string; teamName?:string; played:number; win?:number; won?:number; draw?:number; drawn?:number; lose?:number; lost?:number; goalsFor?:number; goalsAgainst?:number; goalDiff?:number; goalDifference?:number; points:number }
 export type BoardType = 'free'|'cheering';
-export interface Post { id:number; boardType?:string; userId?:number; title:string; content:string; authorName?:string; createdAt:string; viewCount?:number; likeCount?:number; commentCount?:number; comments?:Comment[] }
+export interface Post { id:number; boardType?:string; userId?:number; title:string; content:string; authorName?:string; createdAt:string; viewCount?:number; likeCount?:number; commentCount:number; comments?:Comment[] }
 export interface Comment { id:number; userId?:number; content:string; authorName?:string; likeCount?:number; createdAt:string }
 export type SponsorTier = 'OFFICIAL'|'PARTNER';
 export interface Sponsor { id:number; name:string; tier:SponsorTier; logoUrl?:string; linkUrl?:string; websiteUrl?:string }
