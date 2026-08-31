@@ -3,6 +3,7 @@ import {ArrowRight,X} from 'lucide-react';
 import {Link,useNavigate} from 'react-router-dom';
 import {getHomeNotice} from '../api/news';
 import type {News} from '../types';
+import PlayerApplicationPrompt from '../components/PlayerApplicationPrompt';
 
 const NOTICE_HIDE_KEY='seowonfc_notice_hidden';
 const ONE_DAY=24*60*60*1000;
@@ -54,6 +55,7 @@ export default function HomePage(){
   },[notice,hideForDay]);
 
   return <>
+    <div className="container-page pt-8"><PlayerApplicationPrompt/></div>
     <section className="border-b border-line bg-ink text-white"><div className="container-page py-20 md:py-32"><p className="text-sm font-medium tracking-[.25em]">TOGETHER, WE ARE STRONGER</p><h1 className="mt-6 max-w-3xl text-4xl font-black leading-tight md:text-7xl">우리의 축구,<br/>우리의 서원 FC.</h1><p className="mt-6 max-w-xl text-white/70">경기장 안팎에서 함께 성장하는 서원 FC의 소식과 이야기를 만나보세요.</p><Link to="/matches" className="btn mt-10 bg-white text-ink">경기 일정 보기 <ArrowRight className="ml-2 size-4"/></Link></div></section>
     <section className="container-page grid gap-px bg-line py-12 md:grid-cols-3 md:py-20">{[['NEWS','구단의 새로운 소식을 확인하세요.','/news'],['TEAM','서원 FC 선수단을 소개합니다.','/players'],['EVENT','서원 FC의 다양한 이벤트를 확인하세요.','/events']].map(([title,text,to])=><Link key={title} to={to} className="group bg-white p-8 md:p-10"><p className="text-xs text-muted">{title}</p><h2 className="mt-4 text-xl font-semibold">{text}</h2><ArrowRight className="mt-8 transition-transform group-hover:translate-x-1"/></Link>)}</section>
     {notice&&<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onMouseDown={event=>{if(event.target===event.currentTarget)closeNotice()}}>

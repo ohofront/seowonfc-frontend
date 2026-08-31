@@ -4,6 +4,7 @@ import { getNotifications, readNotification } from '../api/notifications';
 import { PageHeader, State } from '../components/UI';
 import { useAsync } from '../hooks/useAsync';
 import { useAuth } from '../hooks/useAuth';
+import PlayerApplicationPrompt from '../components/PlayerApplicationPrompt';
 
 export default function MyPage(){
   const {user}=useAuth();
@@ -13,6 +14,7 @@ export default function MyPage(){
   const markRead=async(id:number)=>{await readNotification(id);await notes.reload()};
 
   return <div className="container-page page-space">
+    <PlayerApplicationPrompt/>
     <PageHeader title="마이페이지" description="회원 정보와 알림을 확인하세요."/>
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
       <section>
