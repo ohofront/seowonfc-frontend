@@ -23,6 +23,13 @@ export default function HomePage(){
   const navigate=useNavigate();
   const [notice,setNotice]=useState<News>();
   const [hideForDay,setHideForDay]=useState(false);
+  const [showWelcomeModal,setShowWelcomeModal]=useState(false);
+
+  useEffect(()=>{
+    if(sessionStorage.getItem('justSignedUp')!=='true')return;
+    sessionStorage.removeItem('justSignedUp');
+    setShowWelcomeModal(true);
+  },[]);
 
   useEffect(()=>{
     let active=true;
@@ -72,6 +79,17 @@ export default function HomePage(){
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line bg-surface px-6 py-4">
           <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" className="size-4 accent-ink" checked={hideForDay} onChange={event=>setHideForDay(event.target.checked)}/>하루 동안 보지 않기</label>
           <button type="button" className="text-sm font-medium hover:underline" onClick={closeNotice}>닫기</button>
+        </div>
+      </div>
+    </div>}
+    {showWelcomeModal&&<div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onMouseDown={event=>{if(event.target===event.currentTarget)setShowWelcomeModal(false)}}>
+      <div role="dialog" aria-modal="true" aria-labelledby="welcome-title" className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl md:p-8">
+        <p className="text-xs font-semibold tracking-widest text-muted">WELCOME</p>
+        <h2 id="welcome-title" className="mt-3 text-2xl font-bold">서원 FC에 오신 걸 환영합니다!</h2>
+        <p className="mt-4 leading-7 text-muted">정식 팀원으로 활동하시려면 선수 등록 신청이 필요해요.</p>
+        <div className="mt-8 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button type="button" className="btn-secondary" onClick={()=>setShowWelcomeModal(false)}>나중에 할게요</button>
+          <Link className="btn-primary" to="/players/apply" onClick={()=>setShowWelcomeModal(false)}>지금 신청하기 <ArrowRight className="ml-2 size-4"/></Link>
         </div>
       </div>
     </div>}
