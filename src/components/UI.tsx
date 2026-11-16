@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Spinner } from './GlobalFeedback';
+import { SoccerSpinner } from './GlobalFeedback';
 import { useTranslation } from '../i18n';
 
 export const PageHeader = ({
@@ -39,7 +39,7 @@ export const State = ({
 
   return loading ? (
     <div className="flex justify-center py-20 text-sm text-muted">
-      <Spinner />
+      <SoccerSpinner label={t.common.processing} size="md" />
     </div>
   ) : error ? (
     <div className="rounded-lg border border-danger/30 p-6 text-center text-danger">{error}</div>
