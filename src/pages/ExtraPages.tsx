@@ -1,6 +1,134 @@
-import {useState} from 'react';import {Link,useParams} from 'react-router-dom';import {getEvent,getEvents} from '../api/events';import {getNotifications} from '../api/notifications';import {getSponsors} from '../api/sponsors';import {updateMe} from '../api/auth';import {ImageFallback,PageHeader,State} from '../components/UI';import {useAsync} from '../hooks/useAsync';import {useAuth} from '../hooks/useAuth';
-export function SponsorsPage(){const {data,loading,error}=useAsync(getSponsors,[]);const hasSponsors=Boolean(data?.content.length);return <div className="container-page page-space"><PageHeader title="스폰서" description="서원 FC와 함께하는 소중한 파트너입니다."/><State loading={loading} error={error?'스폰서 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.':''}>{hasSponsors&&(['OFFICIAL','PARTNER'] as const).map(t=><section className="mb-12" key={t}><h2 className="mb-5 text-xl font-semibold">{t==='OFFICIAL'?'공식 스폰서':'파트너'}</h2><div className={`grid gap-4 ${t==='OFFICIAL'?'grid-cols-1 sm:grid-cols-2':'grid-cols-2 md:grid-cols-4'}`}>{data?.content.filter(s=>s.tier===t).map(s=>{const url=s.linkUrl||s.websiteUrl;return <a href={url||'#'} target={url?'_blank':undefined} rel="noreferrer" className="card flex min-h-40 flex-col items-center justify-center gap-4 p-6" key={s.id}><ImageFallback src={s.logoUrl} alt={s.name} className="max-h-20 max-w-full object-contain"/><strong className="text-center text-sm">{s.name}</strong></a>})}</div></section>)}</State><div className={`${hasSponsors?'mt-12 border-t pt-8':'py-20'} border-line text-center`}><p className="text-sm text-muted">서원 FC와 함께하고 싶으신가요?</p><Link className="btn-primary mt-4" to="/sponsors/apply">스폰서 신청하기</Link></div></div>}
-export function EventsPage(){const {data,loading,error}=useAsync(()=>getEvents(),[]);return <div className="container-page page-space"><PageHeader title="이벤트"/><State loading={loading} error={error} empty={!data?.content.length}><div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">{data?.content.map(e=><Link to={`/events/${e.id}`} className="card overflow-hidden" key={e.id}><ImageFallback src={e.imageUrl||e.thumbnailUrl} alt="" className="aspect-video w-full object-cover"/><div className="p-5"><span className="text-xs text-muted">{eventDate(e)}</span><h2 className="mt-2 text-lg font-medium">{e.title}</h2></div></Link>)}</div></State></div>}
-export function EventDetailPage(){const {id=''}=useParams();const {data,loading,error}=useAsync(()=>getEvent(id),[id]);return <div className="container-page page-space"><State loading={loading} error={error} empty={!data}>{data&&<article className="mx-auto max-w-3xl"><Link to="/events" className="text-sm text-muted">← 이벤트 목록</Link><h1 className="mt-6 text-3xl font-bold md:text-5xl">{data.title}</h1><p className="mt-4 text-sm text-muted">{eventDate(data)}</p>{(data.imageUrl||data.thumbnailUrl)&&<img className="my-8 w-full rounded-lg" src={data.imageUrl||data.thumbnailUrl} alt=""/>}<div className="whitespace-pre-wrap py-6 leading-8">{data.content}</div>{data.winners&&data.winners.length>0&&<section className="mt-12 border-t border-line pt-8"><h2 className="text-xl font-semibold">당첨자</h2><ul className="mt-4 space-y-2">{data.winners.map(w=><li key={w}>{w}</li>)}</ul></section>}</article>}</State></div>}
-const eventDate=(event:{eventDate?:string;startDate?:string;endDate?:string})=>event.eventDate||(event.startDate&&event.endDate?`${event.startDate} ~ ${event.endDate}`:event.startDate||event.endDate||'날짜 미정');
-export function MyPage(){const {user,setUser}=useAuth();const notes=useAsync(getNotifications,[]);const [name,setName]=useState(user?.name||'');const [message,setMessage]=useState('');const save=async(e:React.FormEvent)=>{e.preventDefault();try{const next=await updateMe({name});setUser(next);setMessage('정보를 수정했습니다.')}catch(e){setMessage(e instanceof Error?e.message:'수정하지 못했습니다.')}};return <div className="container-page page-space"><PageHeader title="마이페이지"/><div className="grid gap-10 lg:grid-cols-2"><section><h2 className="text-xl font-semibold">내 정보</h2><form onSubmit={save} className="mt-5 space-y-5"><label><span className="label">이메일</span><input className="field bg-surface" disabled value={user?.email||''}/></label><label><span className="label">이름</span><input className="field" value={name} onChange={e=>setName(e.target.value)}/></label><button className="btn-primary">수정하기</button>{message&&<p className="text-sm">{message}</p>}</form></section><section><h2 className="text-xl font-semibold">알림</h2><State loading={notes.loading} error={notes.error} empty={!notes.data?.length}><div className="mt-5 divide-y divide-line border-y border-line">{notes.data?.map(n=><div className={`py-4 ${n.read?'text-muted':''}`} key={n.id}><p className="text-sm">{n.message}</p><p className="mt-2 text-xs text-muted">{new Date(n.createdAt).toLocaleString('ko-KR')}</p></div>)}</div></State></section></div></div>}
+import { Link, useParams } from 'react-router-dom';
+import { getEvent, getEvents } from '../api/events';
+import { getSponsors } from '../api/sponsors';
+import { ImageFallback, PageHeader, State } from '../components/UI';
+import { useAsync } from '../hooks/useAsync';
+import { useTranslation } from '../i18n';
+
+export function SponsorsPage() {
+  const { data, loading, error } = useAsync(getSponsors, []);
+  const { t } = useTranslation();
+  const hasSponsors = Boolean(data?.content.length);
+
+  return (
+    <div className="container-page page-space">
+      <PageHeader title={t.extra.sponsorsTitle} description={t.extra.sponsorsDesc} />
+      <State loading={loading} error={error ? 'Failed to load sponsors' : ''}>
+        {hasSponsors &&
+          (['OFFICIAL', 'PARTNER'] as const).map((tier) => (
+            <section className="mb-12" key={tier}>
+              <h2 className="mb-5 text-xl font-semibold">
+                {tier === 'OFFICIAL' ? t.extra.officialSponsors : t.extra.partners}
+              </h2>
+              <div
+                className={`grid gap-4 ${
+                  tier === 'OFFICIAL' ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-2 md:grid-cols-4'
+                }`}
+              >
+                {data?.content
+                  .filter((s) => s.tier === tier)
+                  .map((s) => {
+                    const url = s.linkUrl || s.websiteUrl;
+                    return (
+                      <a
+                        href={url || '#'}
+                        target={url ? '_blank' : undefined}
+                        rel="noreferrer"
+                        className="card flex min-h-40 flex-col items-center justify-center gap-4 p-6"
+                        key={s.id}
+                      >
+                        <ImageFallback
+                          src={s.logoUrl}
+                          alt={s.name}
+                          className="max-h-20 max-w-full object-contain"
+                        />
+                        <strong className="text-center text-sm">{s.name}</strong>
+                      </a>
+                    );
+                  })}
+              </div>
+            </section>
+          ))}
+      </State>
+      <div className={`${hasSponsors ? 'mt-12 border-t pt-8' : 'py-20'} border-line text-center`}>
+        <p className="text-sm text-muted">{t.extra.sponsorWithUs}</p>
+        <Link className="btn-primary mt-4" to="/sponsors/apply">
+          {t.extra.applySponsor}
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+export function EventsPage() {
+  const { data, loading, error } = useAsync(() => getEvents(), []);
+  const { t } = useTranslation();
+
+  return (
+    <div className="container-page page-space">
+      <PageHeader title={t.extra.eventsTitle} />
+      <State loading={loading} error={error} empty={!data?.content.length}>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {data?.content.map((e) => (
+            <Link to={`/events/${e.id}`} className="card overflow-hidden" key={e.id}>
+              <ImageFallback
+                src={e.imageUrl || e.thumbnailUrl}
+                alt=""
+                className="aspect-video w-full object-cover"
+              />
+              <div className="p-5">
+                <span className="text-xs text-muted">{eventDate(e, t.extra.dateTbd)}</span>
+                <h2 className="mt-2 text-lg font-medium">{e.title}</h2>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </State>
+    </div>
+  );
+}
+
+export function EventDetailPage() {
+  const { id = '' } = useParams();
+  const { data, loading, error } = useAsync(() => getEvent(id), [id]);
+  const { t } = useTranslation();
+
+  return (
+    <div className="container-page page-space">
+      <State loading={loading} error={error} empty={!data}>
+        {data && (
+          <article className="mx-auto max-w-3xl">
+            <Link to="/events" className="text-sm text-muted">
+              {t.extra.eventList}
+            </Link>
+            <h1 className="mt-6 text-3xl font-bold md:text-5xl">{data.title}</h1>
+            <p className="mt-4 text-sm text-muted">{eventDate(data, t.extra.dateTbd)}</p>
+            {(data.imageUrl || data.thumbnailUrl) && (
+              <img className="my-8 w-full rounded-lg" src={data.imageUrl || data.thumbnailUrl} alt="" />
+            )}
+            <div className="whitespace-pre-wrap py-6 leading-8">{data.content}</div>
+            {data.winners && data.winners.length > 0 && (
+              <section className="mt-12 border-t border-line pt-8">
+                <h2 className="text-xl font-semibold">{t.extra.winners}</h2>
+                <ul className="mt-4 space-y-2">
+                  {data.winners.map((w) => (
+                    <li key={w}>{w}</li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </article>
+        )}
+      </State>
+    </div>
+  );
+}
+
+const eventDate = (
+  event: { eventDate?: string; startDate?: string; endDate?: string },
+  defaultLabel = 'Date TBD'
+) =>
+  event.eventDate ||
+  (event.startDate && event.endDate
+    ? `${event.startDate} ~ ${event.endDate}`
+    : event.startDate || event.endDate || defaultLabel);

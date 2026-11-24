@@ -9,6 +9,7 @@ import {formatKoreanDateTime,toKoreanDateTimeInput,toLocalDateTime} from '../uti
 import {createNews,updateNews,type NewsInput} from '../api/news';
 import {createEvent,updateEvent,type EventInput} from '../api/events';
 import {updateMatchDetails,type MatchDetailsInput} from '../api/matches';
+import {useTranslation} from '../i18n';
 
 type ResourceKey='news'|'players'|'matches'|'sponsors'|'events';
 type FieldType='text'|'number'|'url'|'select'|'textarea'|'datetime-local'|'date'|'file';
@@ -66,6 +67,7 @@ const loadRecords=async(resource:ResourceKey):Promise<Page<Record<string,unknown
 };
 
 export default function AdminPage(){
+  const {t} = useTranslation();
   const [resource,setResource]=useState<ResourceKey>('news');
   const records=useAsync(()=>loadRecords(resource),[resource]);
   const [editing,setEditing]=useState<Record<string,unknown>|null>(null);
@@ -110,10 +112,10 @@ export default function AdminPage(){
       await records.reload();
     }catch(error){setFormError(error instanceof Error?error.message:'저장하지 못했습니다.')}
   };
-  const del=async(id:unknown)=>{if(!confirm('정말 삭제하시겠습니까? 삭제한 정보는 복구할 수 없습니다.'))return;await remove(`/admin/${resource}`,String(id));await records.reload()};
+  const del=async(id:unknown)=>{if(!confirm(t.admin.deleteConfirm))return;await remove(`/admin/${resource}`,String(id));await records.reload()};
 
   return <div className="container-page page-space">
-    <PageHeader title="관리자" description="서원 FC 홈페이지에 표시할 콘텐츠를 관리합니다." action={<div className="flex flex-wrap gap-2"><Link className="btn-primary" to="/admin/player-applications">선수 신청 관리</Link><Link className="btn-primary" to="/admin/sponsor-applications">스폰서 신청 관리</Link><button className="btn-secondary" onClick={()=>start()}>새 항목 등록</button></div>}/>
+    <PageHeader title={t.admin.title} description={t.admin.description} action={<div className="flex flex-wrap gap-2"><Link className="btn-primary" to="/admin/player-applications">{t.admin.managePlayerApps}</Link><Link className="btn-primary" to="/admin/sponsor-applications">{t.admin.manageSponsorApps}</Link><button className="btn-secondary" onClick={()=>start()}>{t.admin.registerNewItem}</button></div>}/>
     <div className="mb-8 flex gap-2 overflow-x-auto">{resources.map(([key,label])=><button key={key} className={resource===key?'btn-primary':'btn-secondary'} onClick={()=>{setResource(key);close()}}>{label}</button>)}</div>
     {editing&&resource==='matches'&&isEdit?<MatchEditForm
       values={form}
@@ -136,7 +138,7 @@ export default function AdminPage(){
       <div className="grid gap-4 md:grid-cols-2">{records.data?.content.map((item,index)=><article className="card flex flex-col p-5" key={String(item.id??index)}>
         <div className="flex items-start justify-between gap-4"><div><p className="text-xs text-muted">{resourceLabel(resource)} #{String(item.id??'-')}</p><h2 className="mt-2 text-lg font-semibold">{recordTitle(resource,item)}</h2></div>{Boolean(item.status)&&<span className="rounded bg-surface px-2 py-1 text-xs">{displayValue(String(item.status))}</span>}</div>
         <p className="mt-4 line-clamp-2 text-sm leading-6 text-muted">{recordSummary(resource,item)}</p>
-        <div className="mt-auto flex gap-3 border-t border-line pt-4"><button className="text-sm font-medium underline underline-offset-4" onClick={()=>start(item)}>수정</button><button className="text-sm text-danger underline underline-offset-4" onClick={()=>del(item.id)}>삭제</button></div>
+        <div className="mt-auto flex gap-3 border-t border-line pt-4"><button className="text-sm font-medium underline underline-offset-4" onClick={()=>start(item)}>{t.admin.edit}</button><button className="text-sm text-danger underline underline-offset-4" onClick={()=>del(item.id)}>{t.admin.delete}</button></div>
       </article>)}</div>
     </State>
   </div>;

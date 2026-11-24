@@ -127,4 +127,55 @@ export interface TranslationDictionary {
     loginFailed: string;
     signupFailed: string;
   };
+  admin: {
+    title: string;
+    description: string;
+    playerAppsTitle: string;
+    playerAppsDesc: string;
+    sponsorAppsTitle: string;
+    sponsorAppsDesc: string;
+    contentManagement: string;
+    managePlayerApps: string;
+    manageSponsorApps: string;
+    registerNewItem: string;
+    emptyPlayerApps: string;
+    emptySponsorApps: string;
+    applicant: string;
+    approve: string;
+    reject: string;
+    rejectTitle: string;
+    rejectReasonLabel: string;
+    rejectConfirm: string;
+    approveSuccess: string;
+    approveFailed: string;
+    rejectFailed: string;
+    contactPerson: string;
+    officialSponsor: string;
+    partnerSponsor: string;
+    edit: string;
+    delete: string;
+    deleteConfirm: string;
+  };
+  extra: {
+    sponsorsTitle: string;
+    sponsorsDesc: string;
+    officialSponsors: string;
+    partners: string;
+    sponsorWithUs: string;
+    applySponsor: string;
+    eventsTitle: string;
+    eventList: string;
+    winners: string;
+    dateTbd: string;
+  };
+  mypage: {
+    title: string;
+    myInfo: string;
+    notifications: string;
+    email: string;
+    name: string;
+    editInfo: string;
+    updatedSuccess: string;
+    noNotifications: string;
+  };
 }
