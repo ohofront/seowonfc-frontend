@@ -126,6 +126,8 @@ export interface TranslationDictionary {
     signingUp: string;
     loginFailed: string;
     signupFailed: string;
+    logoutSuccessTitle: string;
+    logoutSuccessMessage: string;
   };
   admin: {
     title: string;

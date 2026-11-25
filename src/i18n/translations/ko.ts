@@ -126,6 +126,8 @@ export const ko: TranslationDictionary = {
     signingUp: '가입하기...',
     loginFailed: '이메일 또는 비밀번호를 확인해주세요.',
     signupFailed: '회원가입에 실패했습니다.',
+    logoutSuccessTitle: '로그아웃 완료',
+    logoutSuccessMessage: '성공적으로 로그아웃되었습니다.',
   },
   admin: {
     title: '관리자',

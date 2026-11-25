@@ -126,6 +126,8 @@ export const fr: TranslationDictionary = {
     signingUp: 'Inscription en cours...',
     loginFailed: 'Veuillez vérifier votre e-mail ou votre mot de passe.',
     signupFailed: "L'inscription a échoué. Veuillez réessayer.",
+    logoutSuccessTitle: 'Déconnexion réussie',
+    logoutSuccessMessage: 'Vous avez été déconnecté avec succès.',
   },
   admin: {
     title: 'Administration',

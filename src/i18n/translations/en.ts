@@ -126,6 +126,8 @@ export const en: TranslationDictionary = {
     signingUp: 'Signing up...',
     loginFailed: 'Please check your email or password.',
     signupFailed: 'Sign up failed. Please try again.',
+    logoutSuccessTitle: 'Logged Out',
+    logoutSuccessMessage: 'You have been logged out successfully.',
   },
   admin: {
     title: 'Admin',

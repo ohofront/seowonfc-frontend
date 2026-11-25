@@ -126,6 +126,8 @@ export const de: TranslationDictionary = {
     signingUp: 'Registrierung läuft...',
     loginFailed: 'Bitte überprüfen Sie Ihre E-Mail-Adresse oder Ihr Passwort.',
     signupFailed: 'Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.',
+    logoutSuccessTitle: 'Abmeldung erfolgreich',
+    logoutSuccessMessage: 'Sie wurden erfolgreich abgemeldet.',
   },
   admin: {
     title: 'Admin',

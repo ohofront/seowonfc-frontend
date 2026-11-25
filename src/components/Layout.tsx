@@ -1,6 +1,6 @@
 import { Globe, Menu, X } from 'lucide-react';
 import { useState } from 'react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation, type Language } from '../i18n';
 
@@ -30,6 +30,22 @@ export function Header() {
   const [open, setOpen] = useState(false);
   const { user, isAdmin, signOut } = useAuth();
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    signOut();
+    setOpen(false);
+    window.dispatchEvent(
+      new CustomEvent('api:feedback', {
+        detail: {
+          type: 'success',
+          title: t.auth.logoutSuccessTitle,
+          message: t.auth.logoutSuccessMessage,
+        },
+      })
+    );
+    navigate('/');
+  };
 
   const navLinks = [
     { to: '/news', label: t.nav.news },
@@ -87,7 +103,7 @@ export function Header() {
               <Link to="/mypage" className="text-sm font-medium hover:underline">
                 {user.name}
               </Link>
-              <button className="btn-secondary min-h-9 px-3" onClick={signOut}>
+              <button className="btn-secondary min-h-9 px-3" onClick={handleLogout}>
                 {t.nav.logout}
               </button>
             </>
@@ -119,10 +135,7 @@ export function Header() {
                     {t.nav.mypage} ({user.name})
                   </Link>
                   <button
-                    onClick={() => {
-                      signOut();
-                      setOpen(false);
-                    }}
+                    onClick={handleLogout}
                     className="btn-secondary min-h-9 px-3 text-sm"
                   >
                     {t.nav.logout}
